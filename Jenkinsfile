@@ -1,27 +1,34 @@
 pipeline {
-    agent any
+   /*  agent {
+        docker {
+            image 'maven:3-alpine'
+            args '-v /root/.m2:/root/.m2'
+        }
+    } */
+	agent {
+        label 'WindowsNode'
+    }
     stages {
-        stage ('Compile Stage') {
-
+        stage('Build') {
             steps {
-                withMaven(maven : 'apache-maven-3.6.1') {
-                    bat 'mvn clean compile'
+                //sh 'mvn -B -DskipTests clean package'
+                bat("mvn -B -DskipTests clean package")
+            }
+        }
+        stage('Test') {
+            steps {
+               // sh 'mvn test'
+                   bat "mvn test"
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
                 }
             }
         }
-        stage ('Testing Stage') {
-
+        stage('Deliver') {
             steps {
-                withMaven(maven : 'apache-maven-3.6.1') {
-                    bat 'mvn test'
-                }
-            }
-        }
-        stage ('Install Stage') {
-            steps {
-                withMaven(maven : 'apache-maven-3.6.1') {
-                    bat 'mvn install'
-                }
+                sh './jenkins/scripts/deliver.sh'
             }
         }
     }
